@@ -1,0 +1,97 @@
+How to run the csh file?
+1: -l option -      for listing all the testcases.
+2: -t <testname> -  for running one of the testcases.
+3: -r option -      for running regression test with ability to merge coverage reports.
+
+
+
+List of Design Features
+----------------------------------------
+ID:Design Feature
+----------------------------------------
+1: On the clock's positive edge, the XSwitch sends 4-bit data packets from the input to the output ports.
+2: When there is legitimate data to be read from the output at a destination port, data_rdy is asserted.
+3. The packet is routed using addr_in, which reads each nibble's value.
+4: Upon setting the corresponding data_read bit, a destination port will become accessible for receiving fresh information.
+5: Routing will fail and the relevant source port's rcv_rdy bit will be cleared if a destination port is occupied and not being read out.
+6: After a packet is successfully routed from the source to any destination port, the rcv_rdy bit on that respective port is reset.
+7: If numerous source ports are attempting to route to the same destination, the most significant (most right) source ports will be given priority.
+
+
+
+List of Constraints
+----------------------------------------
+ID:Constraints
+----------------------------------------
+1: addr_less_than_4 in Transition class
+    addr_in[3:0] < 4, addr_in[7:4] < 4, addr_in[11:8] < 4, and addr_in[15:12] < 4
+        - Each source port is assigned a legitimate destination port, i.e., value from 0 to 3 only using this constraint.
+        - Since there are only 4 destination ports, i.e., 0 to 3, the value of each address nibble cannot be more than 3.
+
+2: constraint_sanity_addr
+      addr_in[3:0] == 4'd0, addr_in[7:4] == 4'd1, addr_in[11:8] == 4'd2, addr_in[15:12] == 4'd3
+        - The purpose of this limitation is to conduct tests with the same address in each transaction.
+
+3: constraint_duplicate_addr
+      addr_in[3:0] == addr_in[7:4] && addr_in[7:4] == addr_in[11:8] && addr_in[11:8] == addr_in[15:12]
+        - The purpose of this limitation is to conduct tests with each port having same address.
+        - Example addresses can be 0000, 1111, 2222, or 3333.
+
+4: constraint_unique_addr
+    unique destionation addresses for addr_in[3:0], addr_in[7:4], addr_in[11:8], addr_in[15:12];
+        - The purpose of this limitation is to conduct tests in a setting free from port conflicts.
+
+
+
+List of Test cases
+----------------------------------------
+ID:Task	Description
+----------------------------------------
+1: test_sanity
+    - The required address < 4 limitation is the sole restriction.
+    - It compels a direct routing of the data to the appropriate target port.
+
+2: test_random
+    - The required address < 4 limitation is the sole restriction.
+    - This runs a thorough random test.
+
+3: test_duplicate_addr
+    - The required address < 4 limitation is the sole restriction.
+    - This sets all of the source addresses to the same value.
+    - This results in a partial port conflict as there are duplicated addresses in a transaction.
+    - Port 0's ultimate priority will be tested in this way.
+
+4: test_unique_addr
+    - The required address < 4 limitation is the sole restriction.
+    - By preventing port conflicts, this test will stop routing failures from occurring.
+    - In simple terms, there will be no duplicated addresses going into the switch before routing data.
+
+
+
+List of Functional Coverage
+----------------------------------------
+ID:Covergroup Description
+----------------------------------------
+Outputs
+    - All the outputs are covered in the task called my_checker().
+    - This particular task checks all the outputs are behaving correctly.
+
+Inputs
+    1. data_in is divided into ports so that a covergroup may be assigned to each port.
+    2. addr_in is divided into 1 to 3 and a min. For anything greater, each source port has unlawful bins.
+    3. Additionally, addr_in and data_in are cross-covered.
+    4. Transition bins for both rising and falling values are covered by valid_in and data_read.
+    5. Moreover, with coverage for a low and a high value.
+
+
+
+Coverage Report Totals BY INSTANCES: Number of Instances 9
+
+    Enabled Coverage              Bins      Hits    Misses    Weight  Coverage
+    ----------------              ----      ----    ------    ------  --------
+    Assertions                       9         9         0         1   100.00%
+    Covergroups                      2        na        na         1    52.97%
+        Coverpoints/Crosses         14        na        na         1        na
+            Covergroup Bins         38        15        23         1    39.47%
+Total coverage (filtered view): 76.48%
+
